@@ -1,0 +1,386 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Mindful Meal Timer',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => MindfulMealTimerHomePage(),
+        '/page2': (context) => MindfulMealHome(),
+        '/page3': (context) => MyHomePage(),
+        '/page4': (context) => MindfulMealTimer(),
+      },
+    );
+  }
+}
+
+class MindfulMealTimerHomePage extends StatefulWidget {
+  @override
+  _MindfulMealTimerHomePageState createState() =>
+      _MindfulMealTimerHomePageState();
+}
+
+class _MindfulMealTimerHomePageState extends State<MindfulMealTimerHomePage> {
+  int _timeEating = 600; // 10 minutes in seconds
+  int _timeResting = 300; // 5 minutes in seconds
+  int _currentTime;
+  Timer _timer;
+  bool _timerRunning = false;
+
+  void _startTimer() {
+    _timerRunning = true;
+    const oneSec = const Duration(seconds: 1);
+    _timer = new Timer.periodic(
+      oneSec,
+      (Timer timer) {
+        if (_currentTime == 0) {
+          timer.cancel();
+          _startNextPhase();
+        } else {
+          setState(() {
+            _currentTime = _currentTime - 1;
+          });
+        }
+      },
+    );
+  }
+
+  void _startNextPhase() {
+    if (_timeEating == 0) {
+      setState(() {
+        _timeEating = 600;
+        _timeResting = 300;
+      });
+    } else {
+      setState(() {
+        int temp = _timeEating;
+        _timeEating = _timeResting;
+        _timeResting = temp;
+      });
+    }
+    _startTimer();
+  }
+
+  void _resetTimer() {
+    setState(() {
+      _timerRunning = false;
+      _timer.cancel();
+      _timeEating = 600;
+      _timeResting = 300;
+      _currentTime = _timeEating;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _currentTime = _timeEating;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Mindful Meal Timer'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              'Time to eat mindfully',
+            ),
+            SizedBox(height: 20),
+            Text(
+              'Eat slowly for ten minutes, rest for five, then finish your meal',
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 40),
+            _timerRunning
+                ? CircularProgressIndicator(
+                    value: _currentTime / (_timeEating + _timeResting),
+                  )
+                : CircularProgressIndicator(),
+            SizedBox(height: 40),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                ElevatedButton(
+                  onPressed: _timerRunning ? null : _startTimer,
+                  child: Text('START'),
+                ),
+                ElevatedButton(
+                  onPressed: _timerRunning ? _resetTimer : null,
+                  child: Text('RESET'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class MindfulMealHome extends StatefulWidget {
+  @override
+  _MindfulMealHomeState createState() => _MindfulMealHomeState();
+}
+
+class _MindfulMealHomeState extends State<MindfulMealHome> {
+  int _minutes = 10;
+  int _seconds = 0;
+  bool _isPaused = false;
+  Timer _timer;
+
+  void _startTimer() {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (_seconds == 0) {
+        if (_minutes == 0) {
+          timer.cancel();
+          _isPaused = true;
+          setState(() {});
+        } else {
+          setState(() {
+            _minutes--;
+            _seconds = 59;
+          });
+        }
+      } else {
+        setState(() {
+          _seconds--;
+        });
+      }
+    });
+  }
+
+  void _pauseTimer() {
+    _timer.cancel();
+    _isPaused = true;
+    setState(() {});
+  }
+
+  void _resetTimer() {
+    _timer.cancel();
+    setState(() {
+      _minutes = 10;
+      _seconds = 0;
+      _isPaused = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Mindful Meal Timer'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              'Eating Time:',
+              style: TextStyle(fontSize: 24.0),
+            ),
+            SizedBox(height: 20.0),
+            Text(
+              '${_minutes.toString().padLeft(2, '0')}:${_seconds.toString().padLeft(2, '0')}',
+              style: TextStyle(fontSize: 60.0),
+            ),
+            SizedBox(height: 20.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                IconButton(
+                  icon: Icon(Icons.play_arrow),
+                  onPressed: !_isPaused
+                      ? null
+                      : () {
+                          _startTimer();
+                          setState(() {
+                            _isPaused = false;
+                          });
+                        },
+                ),
+                IconButton(
+                  icon: Icon(Icons.pause),
+                  onPressed: _isPaused
+                      ? null
+                      : () {
+                          _pauseTimer();
+                        },
+                ),
+                IconButton(
+                  icon: Icon(Icons.refresh),
+                  onPressed: _isPaused
+                      ? () {
+                          _resetTimer();
+                        }
+                      : null,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  int _timeLeft = 600;
+  Timer _timer;
+
+  void _startTimer() {
+    const oneSec = const Duration(seconds: 1);
+    _timer = new Timer.periodic(
+      oneSec,
+      (Timer timer) {
+        if (_timeLeft == 0) {
+          setState(() {
+            timer.cancel();
+          });
+        } else {
+          setState(() {
+            _timeLeft = _timeLeft - 1;
+          });
+        }
+      },
+    );
+  }
+
+  void _pauseTimer() {
+    setState(() {
+      _timer.cancel();
+    });
+  }
+
+  void _resetTimer() {
+    setState(() {
+      _timer.cancel();
+      _timeLeft = 600;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Mindful Meal Timer'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              'Break Time',
+              style: Theme.of(context).textTheme.headline4,
+            ),
+            SizedBox(height: 20),
+            Text(
+              '${(_timeLeft / 60).floor()}:${(_timeLeft % 60).toString().padLeft(2, '0')}',
+              style: Theme.of(context).textTheme.headline2,
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          FloatingActionButton(
+            onPressed: _startTimer,
+            tooltip: 'Start',
+            child: Icon(Icons.play_arrow),
+          ),
+          SizedBox(height: 8),
+          FloatingActionButton(
+            onPressed: _pauseTimer,
+            tooltip: 'Pause',
+            child: Icon(Icons.pause),
+          ),
+          SizedBox(height: 8),
+          FloatingActionButton(
+            onPressed: _resetTimer,
+            tooltip: 'Reset',
+            child: Icon(Icons.refresh),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class MindfulMealTimer extends StatefulWidget {
+  @override
+  _MindfulMealTimerState createState() => _MindfulMealTimerState();
+}
+
+class _MindfulMealTimerState extends State<MindfulMealTimer> {
+  Timer _timer;
+  int _start = 30 * 60; // 30 minutes in seconds
+  int _currentTime = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentTime = _start;
+    _startTimer();
+  }
+
+  void _startTimer() {
+    const oneSec = const Duration(seconds: 1);
+    _timer = new Timer.periodic(
+      oneSec,
+      (Timer timer) {
+        if (_currentTime == 0) {
+          setState(() {
+            timer.cancel();
+          });
+        } else {
+          setState(() {
+            _currentTime = _currentTime - 1;
+          });
+        }
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    int minutes = (_currentTime / 60).floor();
+    int seconds = _currentTime % 60;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Mindful Meal Timer'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
+              style: Theme.of(context).textTheme.headline4,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
